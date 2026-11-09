@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><base target="_top"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Mila Perfumaria</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&display=swap');
+/* Mesmo tema do ERP Mila (fundo azul-marinho + cor de destaque) */
+:root{
+  --bg:#151833;--panel:#202342;--panel2:#131d36;--bar:#111329;
+  --accent:#55efc4;--accent-text:#151833;--accent-rgb:85,239,196;
+  --text:#f5f5f5;--muted:#8fa0bf;--line:#24324f;
+  --ok:#55efc4;--warn:#ffeaa7;--danger:#ff7675;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Comfortaa','Segoe UI',sans-serif;font-size:14px}
+button,input,select{font:inherit}button{cursor:pointer;border:0}button:disabled{opacity:.5;cursor:default}
+
+/* Cabeçalho */
+header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));background:var(--bar);border-bottom:1px solid var(--line)}
+.brand-logo{height:34px;width:auto;max-width:46%;object-fit:contain;mix-blend-mode:screen}
+.status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px}
+.dot.off{background:var(--danger)}
+.refresh{background:var(--panel);color:var(--accent);border:1px solid var(--line);border-radius:18px;padding:6px 10px;font-size:12px}
+
+/* Abas */
+.tabs{display:flex;background:var(--bar);position:sticky;top:55px;z-index:90}
+.tabs button{flex:1;padding:13px 4px;background:transparent;color:var(--muted);border-bottom:3px solid transparent;font-family:inherit;font-weight:700}
+.tabs button.active{color:var(--accent);border-color:var(--accent);background:var(--bg)}
+.tabs .badge{display:inline-block;min-width:18px;padding:1px 6px;margin-left:4px;border-radius:9px;background:var(--accent);color:var(--accent-text);font-size:11px}
+.tabs .badge:empty{display:none}
+
+main{max-width:560px;margin:auto;padding:14px;padding-bottom:130px}
+.heading{font-size:16px;margin:6px 0 14px;color:var(--accent);font-weight:700}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.field-label{display:block;margin-bottom:8px;color:var(--text);font-weight:600}
+.control{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px 13px;outline:none;font-size:16px!important}
+.control:focus{border-color:var(--accent)}
+.control.ok{border-color:var(--ok)}.control.err{border-color:var(--danger)}
+.row{display:flex;gap:8px;align-items:center}.scan-input{flex:1;min-width:0}
+.plus{background:var(--accent);color:var(--accent-text);border-radius:12px;padding:10px 16px;font-size:20px;font-weight:700}
+.primary{background:var(--accent);color:var(--accent-text);border-radius:12px;padding:13px 15px;font-weight:700}
+.secondary{background:var(--panel2);color:var(--text);border-radius:12px;padding:13px 14px;border:1px solid var(--line)}
+.danger{background:transparent;color:var(--danger);border-radius:12px;padding:13px 14px;border:1px solid var(--danger)}
+.muted{color:var(--muted)}
+.hint{min-height:16px;margin-top:6px;font-size:12px;color:var(--muted)}
+.hint.ok{color:var(--ok)}.hint.err{color:var(--danger)}
+
+/* Cliente com autocomplete */
+.ac{position:relative}
+.ac-list{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;z-index:50;max-height:260px;overflow-y:auto;
+  background:var(--panel2);border:1px solid var(--accent);border-radius:12px;box-shadow:0 8px 24px #0008}
+.ac-list li{padding:11px 10px;border-radius:8px}
+.ac-list li.on,.ac-list li:active{background:rgba(var(--accent-rgb),.18)}
+.ac-list li.vazio{color:var(--muted)}
+.ac-list b{color:var(--accent)}
+.ac-limpar{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;color:var(--muted);font-size:18px;padding:6px 10px}
+
+.product-found{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px;margin-top:9px;line-height:1.55}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.item.novo{border-color:var(--accent)}
+.item-top{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.item-name{font-weight:600;line-height:1.4}
+.small{font-size:12px;color:var(--muted);margin-top:4px}
+.qty{display:flex;align-items:center;border:1px solid var(--accent);border-radius:22px;overflow:hidden;white-space:nowrap}
+.qty button{background:var(--accent);color:var(--accent-text);padding:7px 13px;font-weight:700}
+.qty span{min-width:36px;text-align:center;padding:0 7px}
+.pill{display:inline-block;padding:3px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--accent);font-size:11px;font-weight:400}
+.message{display:none;margin:8px 0;padding:10px;border-radius:10px;line-height:1.4}
+.message.show{display:block}
+.message.err{background:rgba(255,118,117,.15);color:#ffd0cf;border:1px solid var(--danger)}
+.message.ok{background:rgba(var(--accent-rgb),.14);color:var(--ok);border:1px solid var(--ok)}
+
+/* Barra fixa embaixo (fácil de alcançar com o polegar) */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--bar);border-top:1px solid var(--line);
+  padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+.bar-in{max-width:560px;margin:auto}
+.bar-total{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-weight:700}
+.bar-total strong{font-size:18px;color:var(--warn)}
+.bar-actions{display:flex;gap:8px}.bar-actions>*{flex:1}.bar-actions .grande{flex:1.6}
+section.tab-pane{display:none}section.tab-pane.active{display:block}
+section.tab-pane:not(.active) .bar{display:none}
+
+/* Leitor de código de barras (câmera) */
+.plus.cam{background:var(--panel2);color:var(--accent);border:1px solid var(--accent);padding:10px 12px;font-size:18px}
+.scan{position:fixed;inset:0;z-index:300;background:#05060f;display:flex;flex-direction:column}
+.scan[hidden]{display:none}
+.scan-top{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));background:var(--bar)}
+.scan-top strong{color:var(--accent)}
+.scan-x{background:var(--accent);color:var(--accent-text);border-radius:12px;padding:9px 14px;font-weight:700}
+.scan-view{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+.scan-view video{width:100%;height:100%;object-fit:cover}
+.scan-frame{position:absolute;left:8%;right:8%;top:50%;height:30%;transform:translateY(-50%);border:2px solid var(--accent);border-radius:14px;box-shadow:0 0 0 100vmax rgba(5,6,15,.55)}
+.scan-frame::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:var(--danger);opacity:.85}
+.scan-flash{position:absolute;inset:0;background:var(--ok);opacity:0;pointer-events:none;transition:opacity .35s}
+.scan-flash.on{opacity:.35;transition:none}
+.scan-flash.erro{background:var(--danger)}
+.scan-info{padding:8px 14px 0;text-align:center;color:var(--muted);min-height:26px;font-size:13px}
+.scan-info.err{color:var(--danger)}
+.scan-ultimo{margin:8px 14px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);min-height:56px;line-height:1.45}
+.scan-ultimo.ok{border-color:var(--ok)}.scan-ultimo.err{border-color:var(--danger);color:#ffd0cf}
+.scan-acoes{display:flex;gap:8px;padding:0 14px 12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.scan-acoes>*{flex:1;text-align:center}
+label.secondary{display:block;cursor:pointer}
+
+/* Aviso fixo (sempre visível, mesmo com a página rolada) */
+.aviso{position:fixed;left:12px;right:12px;top:calc(64px + env(safe-area-inset-top));z-index:250;max-width:536px;margin:auto;padding:12px 14px;border-radius:12px;
+  font-weight:600;line-height:1.4;display:none;box-shadow:0 8px 24px #0009}
+.aviso.show{display:block}
+.aviso.ok{background:#12372f;color:var(--ok);border:1px solid var(--ok)}
+.aviso.err{background:#3a1d28;color:#ffd0cf;border:1px solid var(--danger)}
+
+/* Confirmação */
+.sheet{position:fixed;inset:0;z-index:200;display:none;align-items:flex-end;justify-content:center;background:rgba(10,12,30,.65)}
+.sheet.show{display:flex}
+.sheet-box{width:100%;max-width:560px;background:var(--panel);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border:1px solid var(--line)}
+.sheet-box h3{margin:0 0 10px;color:var(--accent)}
+.sheet-box p{margin:6px 0;line-height:1.5}
+</style></head>
+<body>
+<header>
+  <img src="https://lh3.googleusercontent.com/d/1VmwSJ4Xz-x2tqH2IVKnCTDTiLS7_PWxk=s400" alt="Mila Perfumaria" class="brand-logo">
+  <div class="status">
+    <span><i class="dot" id="netDot"></i><span id="netTxt">Online</span></span>
+    <button class="refresh" id="btnCfg" onclick="abrirCfgPainel()" aria-label="Conexão com o ERP" hidden>⚙</button>
+    <button class="refresh" id="btnAtualizar" onclick="carregar(true)">↻ Atualizar</button>
+  </div>
+</header>
+<nav class="tabs">
+  <button id="btnVendas" class="active" onclick="mudarAba('Vendas')">🛒 VENDAS<span class="badge" id="bdgVenda"></span></button>
+  <button id="btnInventario" onclick="mudarAba('Inventario')">📋 INVENTÁRIO<span class="badge" id="bdgInv"></span></button>
+</nav>
+
+<main>
+  <!-- ABA VENDAS -->
+  <section id="paneVendas" class="tab-pane active">
+    <div class="heading">Nova venda</div>
+    <div class="panel">
+      <label class="field-label" for="clienteBusca">👤 Cliente</label>
+      <div class="ac">
+        <input id="clienteBusca" class="control" type="text" autocomplete="off" autocapitalize="words" spellcheck="false"
+               role="combobox" aria-expanded="false" aria-controls="clienteLista" placeholder="Digite o nome do cliente...">
+        <button class="ac-limpar" id="clienteLimpar" onclick="limparCliente()" aria-label="Trocar cliente" hidden>✕</button>
+        <ul id="clienteLista" class="ac-list" role="listbox" hidden></ul>
+      </div>
+      <div class="hint" id="dicaCliente"></div>
+    </div>
+    <div class="panel">
+      <label class="field-label" for="eanVenda">▣ Leitura de produtos (EAN)</label>
+      <div class="row">
+        <input id="eanVenda" class="control scan-input" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="Bipe ou digite o EAN..." oninput="aoDigitarEan(this,'Venda')">
+        <button class="plus cam" onclick="abrirScanner('Venda')" aria-label="Ler com a câmera">📷</button>
+        <button class="plus" onclick="adicionarEan('Venda')" aria-label="Adicionar">+</button>
+      </div>
+      <div class="hint" id="dicaVenda"></div>
+      <div id="mensagemVenda" class="message"></div>
+    </div>
+    <div class="panel">
+      <div class="field-label">Carrinho <span class="pill" id="contagemVenda">0 un</span></div>
+      <div id="listaVenda" class="list"><div class="muted">Nenhum produto adicionado.</div></div>
+    </div>
+    <div class="bar"><div class="bar-in">
+      <div class="bar-total"><span>Total coletado</span><strong id="totalVenda">R$ 0,00</strong></div>
+      <div class="bar-actions">
+        <button class="secondary" id="btnRascunho" onclick="enviarVenda('rascunho')">Rascunho</button>
+        <button class="primary grande" id="btnEnviarVenda" onclick="enviarVenda('enviar')">Enviar venda</button>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ABA INVENTÁRIO -->
+  <section id="paneInventario" class="tab-pane">
+    <div class="heading">Contagem de estoque</div>
+    <div class="panel">
+      <label class="field-label" for="responsavel">👤 Responsável</label>
+      <div class="ac">
+        <input id="respBusca" class="control" type="text" autocomplete="off" autocapitalize="words" spellcheck="false"
+               role="combobox" aria-expanded="false" aria-controls="respLista" placeholder="Digite o nome do responsável...">
+        <button class="ac-limpar" id="respLimpar" onclick="limparResp()" aria-label="Trocar responsável" hidden>✕</button>
+        <ul id="respLista" class="ac-list" role="listbox" hidden></ul>
+      </div>
+      <div class="hint" id="dicaResp"></div>
+    </div>
+    <div class="panel">
+      <label class="field-label" for="eanInventario">▣ Leitura de produtos (EAN)</label>
+      <div class="row">
+        <input id="eanInventario" class="control scan-input" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="Bipe ou digite o EAN..." oninput="aoDigitarEan(this,'Inventario')">
+        <button class="plus cam" onclick="abrirScanner('Inventario')" aria-label="Ler com a câmera">📷</button>
+        <button class="plus" onclick="adicionarEan('Inventario')" aria-label="Adicionar">+</button>
+      </div>
+      <div class="hint" id="dicaInventario"></div>
+      <div id="mensagemInventario" class="message"></div>
+      <div id="encontradoInventario" class="product-found" hidden></div>
+      <div id="saldosInventario"></div>
+    </div>
+    <div class="panel">
+      <div class="field-label">Produtos contados <span class="pill" id="contagemInventario">0 un</span></div>
+      <div class="small" style="margin:-4px 0 10px">Cada leitura soma 1 unidade. Ajuste com − e + na lista.</div>
+      <div id="listaInventario" class="list"><div class="muted">Nenhum produto contado.</div></div>
+    </div>
+    <div class="bar"><div class="bar-in">
+      <div class="bar-actions">
+        <button class="danger" onclick="limparInventario()">Cancelar</button>
+        <button class="primary grande" id="btnEnviarInv" onclick="enviarInventario()">Enviar inventário</button>
+      </div>
+    </div></div>
+  </section>
+</main>
+
+<div class="aviso" id="aviso" role="status" onclick="this.classList.remove('show')"></div>
+<input type="file" id="fotoDireta" accept="image/*" capture="environment" hidden onchange="lerFotoDireta(this)">
+
+<!-- Leitor por câmera -->
+<div class="scan" id="scan" hidden>
+  <div class="scan-top"><strong id="scanTitulo">Ler código de barras</strong><button class="scan-x" onclick="fecharScanner()">Concluir</button></div>
+  <div class="scan-view"><video id="scanVideo" playsinline muted></video><div class="scan-frame"></div><div class="scan-flash" id="scanFlash"></div></div>
+  <div class="scan-info" id="scanInfo"></div>
+  <div class="scan-ultimo" id="scanUltimo"><span class="muted">Aponte a câmera para o código de barras.</span></div>
+  <div class="scan-acoes">
+    <button class="secondary" id="scanLanterna" onclick="alternarLanterna()" hidden>🔦 Lanterna</button>
+    <button class="secondary" onclick="desfazerLeitura()">↩ Desfazer</button>
+    <label class="secondary">📷 Foto<input type="file" id="scanFoto" accept="image/*" capture="environment" hidden onchange="lerFoto(this)"></label>
+  </div>
+</div>
+
+<!-- Conexão com o ERP (só no painel hospedado) -->
+<div class="sheet" id="cfgPainel"><div class="sheet-box">
+  <h3>Conectar ao ERP</h3>
+  <p>Abra o <strong>link ou o QR code</strong> gerado no ERP (Configurações → painel hospedado) e o painel se conecta sozinho.</p>
+  <p class="small">Ou cole o link completo aqui:</p>
+  <input id="cfgLink" class="control" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://…#u=…&t=…">
+  <div class="message" id="cfgMsg"></div>
+  <div class="bar-actions" style="margin-top:14px">
+    <button class="secondary" id="cfgFechar" onclick="$('cfgPainel').classList.remove('show')">Fechar</button>
+    <button class="primary grande" onclick="conectarPeloLink()">Conectar</button>
+  </div>
+  <p class="small" id="cfgEstado"></p>
+</div></div>
+
+<!-- Confirmação antes de enviar -->
+<div class="sheet" id="sheet"><div class="sheet-box">
+  <h3 id="sheetTitulo"></h3><div id="sheetCorpo"></div>
+  <div class="bar-actions" style="margin-top:14px">
+    <button class="secondary" onclick="fecharSheet(false)">Voltar</button>
+    <button class="primary grande" onclick="fecharSheet(true)">Confirmar envio</button>
+  </div>
+</div></div>
+
+<script>
+/* ===== Estado ===== */
+const S={produtos:[],porEan:new Map(),porSemZero:new Map(),locais:[],estoque:[],clientes:[],responsaveis:[]};
+const carrinho=new Map(), contagem=new Map();
+let clienteSel=null, respSel=null, ultimoEanInv='', abaAtiva='Vendas', enviando=false, ultimoAdicionado='';
+const CHAVE='mila_painel_v2';
+
+/* ===== Utilitários ===== */
+const moeda=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+const $=id=>document.getElementById(id);
+
+/* ===== Modo hospedado =====
+   Quando o painel NÃO está dentro do Apps Script (página publicada em HTTPS, por exemplo no GitHub Pages),
+   a ponte abaixo troca o google.script.run por chamadas à planilha. O endereço da planilha e o CÓDIGO DO
+   PAINEL vêm no link gerado pelo ERP (depois do #) e ficam guardados só neste celular. Esse código abre apenas
+   as 4 ações do painel; o token do ERP nunca chega aqui. */
+const HOSPEDADO=(typeof google==='undefined'||!google.script);
+const CFG_CHAVE='adaptte_painel_cfg';
+const URL_PLANILHA=/^https:\/\/script\.google\.com\/(a\/macros\/[\w.-]+|macros)\/s\/[\w-]+\/exec$/;
+let CFG_API=null;
+function lerLink(texto){                       // aceita o link inteiro ou só o trecho depois do #
+  try{
+    const t=String(texto||'').trim(), h=new URLSearchParams(t.includes('#')?t.slice(t.indexOf('#')+1):t.replace(/^#/,''));
+    const id=h.get('s'), c=h.get('t');   // s = código da implantação (QR curto) ou u = endereço completo (conta Workspace)
+    const u=id&&/^[\w-]{20,200}$/.test(id)?'https://script.google.com/macros/s/'+id+'/exec':h.get('u');
+    return u&&c&&URL_PLANILHA.test(u)&&/^[0-9a-f]{32}$/.test(c)?{u,t:c}:null;
+  }catch(e){return null;}
+}
+function guardarCfg(cfg){CFG_API=cfg;try{localStorage.setItem(CFG_CHAVE,JSON.stringify(cfg));}catch(e){}}
+function carregarCfg(){
+  const novo=lerLink(location.hash);
+  if(novo){guardarCfg(novo);try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}return;}
+  try{const c=JSON.parse(localStorage.getItem(CFG_CHAVE)||'null');if(c&&URL_PLANILHA.test(c.u)&&/^[0-9a-f]{32}$/.test(c.t))CFG_API=c;}catch(e){}
+}
+if(HOSPEDADO){
+  carregarCfg();
+  const ACOES={dadosIniciaisGeral:'painelDados',salvarVenda:'painelVenda',salvarRascunhoVenda:'painelRascunho',salvarInventario:'painelInventario'};
+  async function chamarPlanilha(metodo,args){
+    if(!CFG_API) throw new Error('Painel sem conexão com o ERP. Toque em ⚙ e abra o link gerado no ERP.');
+    const acao=ACOES[metodo]; if(!acao) throw new Error('Pedido desconhecido.');
+    const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),30000); let r;
+    try{   // text/plain evita a consulta prévia (CORS) que o Apps Script não responde
+      r=await fetch(CFG_API.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({token:CFG_API.t,acao,dados:args[0]}),redirect:'follow',signal:ctl.signal});
+    }catch(e){throw new Error(e&&e.name==='AbortError'?'A planilha demorou demais para responder.':'Sem resposta da planilha. Confira a internet do celular e se a implantação do Apps Script foi atualizada (Nova versão)');}
+    finally{clearTimeout(to);}
+    let j; try{j=await r.json();}catch(e){throw new Error('Resposta inesperada da planilha. Confira se a implantação do Apps Script foi atualizada.');}
+    if(!j||!j.ok) throw new Error((j&&j.erro)||'A planilha recusou o pedido.');
+    return j.dados;
+  }
+  const criarPonte=(ok,falha)=>new Proxy({},{get(_,nome){
+    if(nome==='withSuccessHandler') return f=>criarPonte(f,falha);
+    if(nome==='withFailureHandler') return f=>criarPonte(ok,f);
+    return (...args)=>{chamarPlanilha(nome,args).then(d=>{if(ok)ok(d);},e=>{if(falha)falha(e);});};
+  }});
+  window.google={script:{run:criarPonte(null,null)}};
+}
+function abrirCfgPainel(){
+  $('cfgLink').value=''; $('cfgMsg').className='message';
+  $('cfgEstado').textContent=CFG_API?'Conectado a uma planilha. Para trocar, cole um novo link.':'Ainda não conectado.';
+  $('cfgPainel').classList.add('show');
+}
+function conectarPeloLink(){
+  const cfg=lerLink($('cfgLink').value), m=$('cfgMsg');
+  if(!cfg){m.textContent='Esse link não parece ser o do ERP. Copie de novo em Configurações → painel hospedado.';m.className='message show err';return;}
+  guardarCfg(cfg); $('cfgPainel').classList.remove('show'); carregar(true);
+}
+if(HOSPEDADO){
+  $('btnCfg').hidden=false;
+  // Link do ERP aberto com o painel já aberto na mesma aba (só o # muda): conecta sem recarregar
+  window.addEventListener('hashchange',()=>{
+    const novo=lerLink(location.hash); if(!novo) return;
+    guardarCfg(novo); try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+    $('cfgPainel').classList.remove('show'); carregar(true);
+  });
+}
+
+/* Reenvio seguro: se o envio falhar e você tentar de novo com o MESMO conteúdo, o pedido leva o mesmo
+   identificador e a planilha não grava duas vezes (a falha pode ter ocorrido só na resposta). */
+let tentativa=null;
+function idDoPedido(tipo,conteudo){
+  const sig=tipo+'|'+JSON.stringify(conteudo);
+  if(!tentativa||tentativa.sig!==sig){
+    const id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('p'+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+    tentativa={sig,id};
+  }
+  return tentativa.id;
+}
+
+function msg(aba,t,erro=true){
+  const el=$('mensagem'+aba); el.textContent=t; el.className='message show '+(erro?'err':'ok');
+  clearTimeout(el._t); if(!erro) el._t=setTimeout(()=>el.classList.remove('show'),6000);
+}
+function esconderMsg(aba){$('mensagem'+aba).classList.remove('show');}
+const abaMsg=()=>abaAtiva==='Inventario'?'Inventario':'Venda';   // 'Vendas' (aba) usa a caixa 'mensagemVenda'
+
+/* ===== Validação do EAN =====
+   Formato: 8, 12, 13 ou 14 dígitos. Dígito verificador (GS1, módulo 10) serve para
+   separar "leitura errada" de "produto não cadastrado". Produto que está no cadastro
+   é sempre aceito (há códigos internos sem dígito válido). Zeros à esquerda não importam. */
+const TAMANHOS=[8,12,13,14];
+function dvOk(c){
+  const d=c.split('').map(Number), dv=d.pop(); let s=0;
+  for(let i=d.length-1,p=0;i>=0;i--,p++) s+=d[i]*(p%2===0?3:1);
+  return (10-(s%10))%10===dv;
+}
+function achar(c){return S.porEan.get(c)||S.porSemZero.get(c.replace(/^0+/,''))||null;}
+function validar(c){
+  if(!/^\d+$/.test(c)||!TAMANHOS.includes(c.length))
+    return {erro:'EAN inválido: use 8, 12, 13 ou 14 dígitos ('+c.length+' digitados).'};
+  const p=achar(c); if(p) return {produto:p};
+  if(!dvOk(c)) return {erro:'Leitura inválida ('+c+'): o dígito verificador não confere. Leia de novo.'};
+  return {erro:'Produto não cadastrado para o EAN '+c+'.'};
+}
+function aoDigitarEan(el,aba){
+  el.value=el.value.replace(/\D/g,'').slice(0,14);
+  const dica=$('dica'+aba), c=el.value; el.className='control scan-input'; dica.className='hint';
+  esconderMsg(aba);
+  if(!c){dica.textContent='';return;}
+  const p=achar(c);
+  if(p){el.classList.add('ok');dica.classList.add('ok');dica.textContent='✓ '+p.nome;return;}
+  if(TAMANHOS.includes(c.length)){
+    el.classList.add('err');dica.classList.add('err');
+    dica.textContent=dvOk(c)?'Produto não cadastrado.':'Dígito verificador não confere.';
+  }else dica.textContent=c.length+' dígitos (use 8, 12, 13 ou 14)';
+}
+
+/* ===== Navegação ===== */
+function mudarAba(aba){
+  abaAtiva=aba;
+  $('paneVendas').classList.toggle('active',aba==='Vendas');
+  $('paneInventario').classList.toggle('active',aba==='Inventario');
+  $('btnVendas').classList.toggle('active',aba==='Vendas');
+  $('btnInventario').classList.toggle('active',aba==='Inventario');
+  if(aba==='Inventario') setTimeout(()=>$('eanInventario').focus(),50);
+  else if(clienteSel) setTimeout(()=>$('eanVenda').focus(),50);
+}
+function atualizarRede(){
+  const on=navigator.onLine; $('netDot').className='dot'+(on?'':' off'); $('netTxt').textContent=on?'Online':'Sem conexão';
+}
+window.addEventListener('online',atualizarRede); window.addEventListener('offline',atualizarRede);
+
+/* ===== Rascunho local (não perde o carrinho se fechar o app) ===== */
+function salvarLocal(){
+  try{localStorage.setItem(CHAVE,JSON.stringify({
+    cli:clienteSel, resp:respSel,
+    car:[...carrinho.values()].map(i=>[i.ean,i.quantidade]),
+    inv:[...contagem.values()].map(i=>[i.ean,i.quantidade])}));}catch(e){}
+}
+function restaurarLocal(){
+  try{
+    const d=JSON.parse(localStorage.getItem(CHAVE)||'null'); if(!d) return;
+    if(d.cli&&S.clientes.some(c=>String(c.id)===String(d.cli.id))) autoCli.escolher(d.cli,false);
+    if(d.resp&&S.responsaveis.some(c=>String(c.id)===String(d.resp.id))) autoResp.escolher(d.resp,false);
+    (d.car||[]).forEach(([e,q])=>{const p=achar(e);if(p&&q>0)carrinho.set(p.ean,{...p,quantidade:q});});
+    (d.inv||[]).forEach(([e,q])=>{const p=achar(e);if(p&&q>0)contagem.set(p.ean,{...p,quantidade:q});});
+  }catch(e){}
+}
+
+/* ===== Autocomplete (cliente e responsável) ===== */
+function criarAuto(c){
+  const inp=$(c.inp), ul=$(c.ul), lim=$(c.lim), dica=$(c.dica); let idx=-1, itens=[];
+  const buscar=t=>{
+    const q=norm(t), L=c.lista(); if(!q) return L.slice(0,8); const partes=q.split(/\s+/);
+    return L.filter(x=>{const n=norm(x.nome);return partes.every(p=>n.includes(p));})
+      .sort((a,b)=>(norm(a.nome).startsWith(q)?0:1)-(norm(b.nome).startsWith(q)?0:1)||a.nome.localeCompare(b.nome,'pt-BR')).slice(0,8);
+  };
+  const destacar=(nome,t)=>{
+    const p=norm(t).split(/\s+/)[0]; if(!p) return esc(nome);
+    const i=norm(nome).indexOf(p); if(i<0) return esc(nome);
+    return esc(nome.slice(0,i))+'<b>'+esc(nome.slice(i,i+p.length))+'</b>'+esc(nome.slice(i+p.length));
+  };
+  const abrir=()=>{
+    itens=buscar(inp.value); idx=itens.length?0:-1;
+    ul.innerHTML=itens.length?itens.map((x,i)=>`<li role="option" data-i="${i}" class="${i===idx?'on':''}">${destacar(x.nome,inp.value)}</li>`).join(''):'<li class="vazio">Nenhum resultado</li>';
+    ul.hidden=false; inp.setAttribute('aria-expanded','true');
+  };
+  const fechar=()=>{ul.hidden=true;inp.setAttribute('aria-expanded','false');};
+  const escolher=(o,focar=true)=>{
+    inp.value=o.nome; inp.readOnly=true; inp.className='control ok'; lim.hidden=false; dica.textContent='';
+    fechar(); c.set({id:o.id,nome:o.nome}); if(focar&&c.depois) c.depois();
+  };
+  const limpar=()=>{inp.readOnly=false;inp.value='';inp.className='control';lim.hidden=true;c.set(null);inp.focus();abrir();};
+  const resolver=()=>{
+    if(c.get()) return true; const t=norm(inp.value); if(!t) return false;
+    const ex=c.lista().filter(x=>norm(x.nome)===t); if(ex.length===1){escolher(ex[0],false);return true;} return false;
+  };
+  inp.addEventListener('input',()=>{dica.textContent='';abrir();});
+  inp.addEventListener('focus',()=>{if(!c.get())abrir();});
+  inp.addEventListener('blur',()=>{resolver();});
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault(); if(ul.hidden) abrir(); if(!itens.length) return;
+      idx=(idx+(e.key==='ArrowDown'?1:-1)+itens.length)%itens.length;
+      [...ul.children].forEach((li,i)=>li.classList.toggle('on',i===idx));
+    }else if(e.key==='Enter'){e.preventDefault(); if(!ul.hidden&&itens[idx]) escolher(itens[idx]);}
+    else if(e.key==='Escape') fechar();
+  });
+  ul.addEventListener('pointerdown',e=>{const li=e.target.closest('li[data-i]'); if(!li) return; e.preventDefault(); escolher(itens[+li.dataset.i]);});
+  return {escolher,limpar,resolver,fechar};
+}
+const autoCli=criarAuto({inp:'clienteBusca',ul:'clienteLista',lim:'clienteLimpar',dica:'dicaCliente',
+  lista:()=>S.clientes,get:()=>clienteSel,set:v=>{clienteSel=v;salvarLocal();},depois:()=>$('eanVenda').focus()});
+const autoResp=criarAuto({inp:'respBusca',ul:'respLista',lim:'respLimpar',dica:'dicaResp',
+  lista:()=>S.responsaveis,get:()=>respSel,set:v=>{respSel=v;salvarLocal();},depois:()=>$('eanInventario').focus()});
+const limparCliente=()=>autoCli.limpar(), limparResp=()=>autoResp.limpar();
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.ac')){autoCli.fechar();autoResp.fechar();}});
+
+/* ===== Vendas ===== */
+function registrar(aba,codigo){
+  const v=validar(codigo); if(v.erro) return v;
+  const p=v.produto, mapa=aba==='Venda'?carrinho:contagem;
+  if(mapa.has(p.ean)) mapa.get(p.ean).quantidade+=1; else mapa.set(p.ean,{...p,quantidade:1});
+  if(aba==='Venda'){ultimoAdicionado=p.ean;renderizarVendas();}
+  else{ultimoEanInv=p.ean;mostrarProdutoInventario(p);renderizarInventario();}
+  salvarLocal();
+  return {produto:p,qtd:mapa.get(p.ean).quantidade};
+}
+function adicionarEan(aba){
+  const campo=$('ean'+aba), codigo=campo.value.trim();
+  campo.value=''; campo.className='control scan-input'; $('dica'+aba).textContent=''; esconderMsg(aba);
+  const r=registrar(aba,codigo);
+  if(r.erro) msg(aba,r.erro);
+  campo.focus();
+}
+function alterarVendas(ean,d){
+  const i=carrinho.get(ean); if(!i) return;
+  i.quantidade+=d; if(i.quantidade<=0) carrinho.delete(ean);
+  ultimoAdicionado=''; renderizarVendas(); salvarLocal();
+}
+function renderizarVendas(){
+  const lista=$('listaVenda'); lista.innerHTML='';
+  let total=0,qtd=0;
+  if(!carrinho.size) lista.innerHTML='<div class="muted">Nenhum produto adicionado.</div>';
+  [...carrinho.values()].reverse().forEach(i=>{
+    const sub=i.quantidade*Number(i.preco||0); total+=sub; qtd+=i.quantidade;
+    const d=document.createElement('div'); d.className='item'+(i.ean===ultimoAdicionado?' novo':'');
+    d.innerHTML=`<div class="item-top"><div><div class="item-name">${esc(i.nome)}</div><div class="small">EAN ${esc(i.ean)} · ${moeda(i.preco)}</div></div>
+      <div class="qty"><button onclick="alterarVendas('${esc(i.ean)}',-1)" aria-label="Menos">−</button><span>${i.quantidade}</span><button onclick="alterarVendas('${esc(i.ean)}',1)" aria-label="Mais">+</button></div></div>
+      <div class="small" style="text-align:right;color:var(--warn)">Subtotal ${moeda(sub)}</div>`;
+    lista.appendChild(d);
+  });
+  $('totalVenda').textContent=moeda(total);
+  $('contagemVenda').textContent=qtd+' un · '+carrinho.size+' prod';
+  $('bdgVenda').textContent=qtd||'';
+}
+function confirmar(titulo,html){
+  return new Promise(res=>{$('sheetTitulo').textContent=titulo;$('sheetCorpo').innerHTML=html;$('sheet').classList.add('show');window._sheetRes=res;});
+}
+function fecharSheet(ok){$('sheet').classList.remove('show');if(window._sheetRes){window._sheetRes(ok);window._sheetRes=null;}}
+
+async function enviarVenda(tipo){
+  if(enviando) return; esconderMsg('Venda');
+  if(!autoCli.resolver()){msg('Venda','Selecione um cliente da lista.');$('clienteBusca').focus();return;}
+  if(!carrinho.size){msg('Venda','Leia ao menos um produto.');$('eanVenda').focus();return;}
+  const un=[...carrinho.values()].reduce((s,i)=>s+i.quantidade,0), tot=[...carrinho.values()].reduce((s,i)=>s+i.quantidade*Number(i.preco||0),0);
+  const ok=await confirmar(tipo==='rascunho'?'Salvar rascunho?':'Enviar venda?',
+    `<p><strong>${esc(clienteSel.nome)}</strong></p><p>${un} un · ${carrinho.size} produto(s)</p><p style="color:var(--warn);font-weight:700">${moeda(tot)}</p>
+     <p class="small">${tipo==='rascunho'?'O rascunho fica guardado e o ERP não o finaliza.':'A venda entra na fila e será finalizada no ERP (pagamento e baixa do estoque).'}</p>`);
+  if(!ok) return;
+  enviando=true; ['btnRascunho','btnEnviarVenda'].forEach(i=>$(i).disabled=true);
+  const payload={clienteId:clienteSel.id,itens:[...carrinho.values()].map(i=>({ean:i.ean,quantidade:i.quantidade}))};
+  payload.idCliente=idDoPedido(tipo==='rascunho'?'rascunho':'venda',payload);
+  google.script.run.withSuccessHandler(r=>{
+    enviando=false; ['btnRascunho','btnEnviarVenda'].forEach(i=>$(i).disabled=false);
+    tentativa=null;
+    msg('Venda',(tipo==='rascunho'?'Rascunho salvo: ':'Venda enviada: ')+r.id+'. Aguardando o ERP.',false);
+    carrinho.clear(); ultimoAdicionado=''; renderizarVendas(); autoCli.limpar(); autoCli.fechar(); salvarLocal();
+  }).withFailureHandler(e=>{
+    enviando=false; ['btnRascunho','btnEnviarVenda'].forEach(i=>$(i).disabled=false);
+    msg('Venda','Não enviou: '+(e&&e.message||e)+'. Seu carrinho foi mantido.');
+  })[tipo==='rascunho'?'salvarRascunhoVenda':'salvarVenda'](payload);
+}
+
+/* ===== Inventário ===== */
+function mostrarProdutoInventario(p){
+  const el=$('encontradoInventario'); el.hidden=false;
+  el.innerHTML='<strong>'+esc(p.nome)+'</strong><br><small>EAN '+esc(p.ean)+'</small>';
+  const elS=$('saldosInventario'), linhas=S.estoque.filter(x=>x.ean===p.ean);
+  elS.innerHTML=linhas.length
+    ? linhas.map(x=>{const l=S.locais.find(y=>String(y.id)===String(x.localId));
+        return `<div class="product-found"><strong>${esc(l?l.nome:x.localId)}</strong><br><small>Estoque atual: ${x.quantidade}</small></div>`;}).join('')
+    : '<div class="product-found muted">Sem saldo cadastrado por local.</div>';
+}
+function alterarInventario(ean,d){
+  const i=contagem.get(ean); if(!i) return;
+  i.quantidade=Math.max(0,i.quantidade+d); if(!i.quantidade) contagem.delete(ean);
+  renderizarInventario(); salvarLocal();
+}
+function renderizarInventario(){
+  const el=$('listaInventario'); el.innerHTML='';
+  if(!contagem.size) el.innerHTML='<div class="muted">Nenhum produto contado.</div>';
+  [...contagem.values()].reverse().forEach(i=>{
+    const d=document.createElement('div'); d.className='item'+(i.ean===ultimoEanInv?' novo':'');
+    d.innerHTML=`<div class="item-top"><div><div class="item-name">${esc(i.nome)}</div><div class="small">EAN ${esc(i.ean)}</div></div>
+      <div class="qty"><button onclick="alterarInventario('${esc(i.ean)}',-1)" aria-label="Menos">−</button><span>${i.quantidade}</span><button onclick="alterarInventario('${esc(i.ean)}',1)" aria-label="Mais">+</button></div></div>`;
+    el.appendChild(d);
+  });
+  const t=[...contagem.values()].reduce((s,i)=>s+i.quantidade,0);
+  $('contagemInventario').textContent=t+' un · '+contagem.size+' prod'; $('bdgInv').textContent=t||'';
+}
+function limparInventario(){
+  if(contagem.size&&!confirm('Descartar a contagem atual?')) return;
+  contagem.clear(); ultimoEanInv=''; $('encontradoInventario').hidden=true; $('saldosInventario').innerHTML='';
+  renderizarInventario(); salvarLocal(); $('eanInventario').focus();
+}
+async function enviarInventario(){
+  if(enviando) return; esconderMsg('Inventario');
+  if(!autoResp.resolver()){msg('Inventario','Selecione um responsável da lista.');$('respBusca').focus();return;}
+  const responsavelId=respSel.id;
+  if(!contagem.size){msg('Inventario','Bipe ao menos um produto.');return;}
+  const un=[...contagem.values()].reduce((s,i)=>s+i.quantidade,0), nome=respSel.nome;
+  const ok=await confirmar('Enviar inventário?',
+    `<p><strong>${esc(nome)}</strong></p><p>${un} un · ${contagem.size} produto(s) contados</p>
+     <p class="small">O ERP vai comparar com o estoque e só ajusta depois da sua conferência.</p>`);
+  if(!ok) return;
+  enviando=true; $('btnEnviarInv').disabled=true;
+  const payloadInv={responsavelId,itens:[...contagem.values()].map(i=>({ean:i.ean,quantidade:i.quantidade}))};
+  payloadInv.idCliente=idDoPedido('inventario',payloadInv);
+  google.script.run.withSuccessHandler(r=>{
+    enviando=false; $('btnEnviarInv').disabled=false; tentativa=null;
+    msg('Inventario','Inventário enviado: '+r.id+'. Aguardando o ERP.',false);
+    contagem.clear(); ultimoEanInv=''; $('encontradoInventario').hidden=true; $('saldosInventario').innerHTML='';
+    renderizarInventario(); salvarLocal();
+  }).withFailureHandler(e=>{
+    enviando=false; $('btnEnviarInv').disabled=false;
+    msg('Inventario','Não enviou: '+(e&&e.message||e)+'. Sua contagem foi mantida.');
+  }).salvarInventario(payloadInv);
+}
+
+
+/* ===== Leitor de código de barras pela câmera =====
+   1) Câmera ao vivo (leitura contínua). 2) Se o navegador bloquear a câmera dentro do Apps Script,
+   o botão "Foto" abre a câmera do celular e o código é lido da foto. Decodificador: BarcodeDetector
+   do Chrome quando existe; senão a biblioteca ZXing (baixada só na primeira vez). */
+const SC={aba:'',stream:null,ativo:false,t:null,det:null,zx:null,ultimo:'',ultimoT:0,hist:[],cv:document.createElement('canvas'),audio:null,torch:false,soZx:false,visto:0};
+const ZX_URL='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+const ZX_LOCAL='zxing.min.js';   // painel hospedado: arquivo publicado junto da página (funciona sem depender do CDN)
+function infoScan(t,erro){const el=$('scanInfo');el.textContent=t||'';el.className='scan-info'+(erro?' err':'');}
+function bipe(ok){
+  try{
+    if(!SC.audio) SC.audio=new (window.AudioContext||window.webkitAudioContext)();
+    const o=SC.audio.createOscillator(), g=SC.audio.createGain(); o.connect(g); g.connect(SC.audio.destination);
+    o.frequency.value=ok?1000:250; g.gain.value=.15; o.start(); o.stop(SC.audio.currentTime+(ok?.09:.25));
+  }catch(e){}
+  try{navigator.vibrate&&navigator.vibrate(ok?50:[80,60,80]);}catch(e){}
+}
+function piscar(erro){const f=$('scanFlash');f.className='scan-flash'+(erro?' erro':'')+' on';setTimeout(()=>f.classList.remove('on'),60);}
+function carregarZX(){
+  const fontes=(HOSPEDADO?[ZX_LOCAL,ZX_URL]:[ZX_URL]);
+  const tentar=i=>new Promise((res,rej)=>{
+    const sc=document.createElement('script'); sc.src=fontes[i]; sc.onload=()=>res(); sc.onerror=()=>{sc.remove();rej();};
+    document.head.appendChild(sc);
+  }).catch(()=>i+1<fontes.length?tentar(i+1):Promise.reject(new Error('Não foi possível carregar o leitor (sem internet?).')));
+  return window.ZXing?Promise.resolve():tentar(0);
+}
+async function prepararNativo(){
+  if(SC.det||!('BarcodeDetector' in window)) return;
+  try{
+    const f=(await BarcodeDetector.getSupportedFormats()).filter(x=>['ean_13','ean_8','upc_a','upc_e','itf'].includes(x));
+    if(f.length) SC.det=new BarcodeDetector({formats:f});
+  }catch(e){}
+}
+async function prepararZX(){
+  if(SC.zx) return;
+  await carregarZX();
+  const h=new Map(); h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.ITF]);
+  h.set(ZXing.DecodeHintType.TRY_HARDER,true);
+  SC.zx=new ZXing.MultiFormatReader(); SC.zx.setHints(h);
+}
+async function prepararDecodificador(){   // leitura ao vivo: nativo se houver, senão ZXing
+  await prepararNativo(); if(!SC.det) await prepararZX();
+}
+function zxLer(canvas){
+  try{
+    const bmp=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(canvas)));
+    return SC.zx.decode(bmp).getText();
+  }catch(e){return null;}
+}
+async function lerQuadro(fonte,w,h){
+  if(SC.det){const r=await SC.det.detect(fonte);return r&&r[0]?r[0].rawValue:null;}
+  const esc_=Math.min(1,960/w), cv=SC.cv; cv.width=Math.round(w*esc_); cv.height=Math.round(h*esc_);
+  cv.getContext('2d',{willReadFrequently:true}).drawImage(fonte,0,0,cv.width,cv.height);
+  return zxLer(cv);
+}
+const CAM_CHAVE='mila_cam_so_foto', CAM_DIAS=7;
+function camSoFoto(){
+  try{const t=+localStorage.getItem(CAM_CHAVE)||0; return t&&Date.now()-t<CAM_DIAS*864e5;}catch(e){return false;}
+}
+function lembrarSoFoto(sim){try{sim?localStorage.setItem(CAM_CHAVE,String(Date.now())):localStorage.removeItem(CAM_CHAVE);}catch(e){}}
+async function abrirScanner(aba){
+  if(camSoFoto()){SC.aba=aba;$('fotoDireta').click();return;}   // câmera ao vivo já falhou aqui: vai direto para a foto
+  SC.aba=aba; SC.hist=[]; SC.ultimo=''; SC.ultimoT=0; SC.visto=0;
+  $('scanTitulo').textContent=aba==='Venda'?'Ler produtos da venda':'Ler produtos do inventário';
+  $('scanUltimo').className='scan-ultimo'; $('scanUltimo').innerHTML='<span class="muted">Aponte a câmera para o código de barras.</span>';
+  $('scan').hidden=false; document.body.style.overflow='hidden'; infoScan('Abrindo a câmera...');
+  try{
+    SC.audio=SC.audio||new (window.AudioContext||window.webkitAudioContext)();
+    await prepararDecodificador();
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('sem-camera');
+    SC.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+    const v=$('scanVideo'); v.srcObject=SC.stream; await v.play();
+    const tr=SC.stream.getVideoTracks()[0], cap=(tr.getCapabilities&&tr.getCapabilities())||{};
+    try{ if(cap.focusMode&&cap.focusMode.includes('continuous')) await tr.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+    $('scanLanterna').hidden=!cap.torch; SC.torch=false;
+    lembrarSoFoto(false); SC.ativo=true; infoScan('Aponte para o código de barras. Pode ler vários, um após o outro.'); ciclo();
+  }catch(e){
+    pararCamera();
+    const negada=/Permission|NotAllowed|denied/i.test((e&&(e.name+' '+e.message))||'');
+    if(HOSPEDADO&&negada){   // aqui a câmera ao vivo funciona: só falta permitir (não guarda "só foto")
+      infoScan('A câmera está bloqueada. Toque no cadeado ao lado do endereço, permita a Câmera e abra o leitor de novo. Enquanto isso, use "Foto".',true);
+      return;
+    }
+    lembrarSoFoto(true);
+    infoScan((e&&e.message&&e.message!=='sem-camera'&&!/Permission|NotAllowed|denied/i.test(e.message)?e.message+' ':'')+
+      'A câmera ao vivo não está disponível aqui. Toque em "Foto" para tirar uma foto do código.',true);
+  }
+}
+function ciclo(){
+  if(!SC.ativo) return;
+  const v=$('scanVideo'), prox=()=>{if(SC.ativo)SC.t=setTimeout(ciclo,140);};
+  if(v.readyState<2||!v.videoWidth) return prox();
+  lerQuadro(v,v.videoWidth,v.videoHeight).then(c=>{if(c&&SC.ativo)aoLer(c);}).catch(()=>{}).finally(prox);
+}
+function aoLer(bruto){
+  const cod=String(bruto).replace(/\D/g,''), agora=Date.now();
+  if(!cod) return;
+  const sumiu=agora-SC.visto; SC.visto=agora;
+  if(cod===SC.ultimo&&sumiu<900) return;               // o mesmo código continua na frente da câmera: não conta de novo
+  if(cod!==SC.ultimo&&agora-SC.ultimoT<500) return;
+  SC.ultimo=cod; SC.ultimoT=agora;
+  const r=registrar(SC.aba,cod), box=$('scanUltimo');
+  if(r.erro){
+    bipe(false); piscar(true); box.className='scan-ultimo err'; box.textContent=r.erro; return;
+  }
+  SC.hist.push(r.produto.ean); bipe(true); piscar(false);
+  box.className='scan-ultimo ok';
+  box.innerHTML='✓ <strong>'+esc(r.produto.nome)+'</strong><br><span class="small">'+(SC.aba==='Venda'?moeda(r.produto.preco)+' · ':'')+r.qtd+' un no '+(SC.aba==='Venda'?'carrinho':'inventário')+'</span>';
+}
+function desfazerLeitura(){
+  const ean=SC.hist.pop(); const box=$('scanUltimo');
+  if(!ean){box.className='scan-ultimo';box.innerHTML='<span class="muted">Nada para desfazer.</span>';return;}
+  if(SC.aba==='Venda') alterarVendas(ean,-1); else alterarInventario(ean,-1);
+  const m=SC.aba==='Venda'?carrinho:contagem, q=m.get(ean)?m.get(ean).quantidade:0, p=achar(ean);
+  SC.ultimo=''; SC.visto=0; box.className='scan-ultimo';
+  box.innerHTML='↩ Desfeito: <strong>'+esc(p?p.nome:ean)+'</strong><br><span class="small">'+q+' un restantes</span>';
+}
+async function alternarLanterna(){
+  try{
+    const tr=SC.stream.getVideoTracks()[0]; SC.torch=!SC.torch;
+    await tr.applyConstraints({advanced:[{torch:SC.torch}]});
+  }catch(e){SC.torch=false;infoScan('Não foi possível ligar a lanterna.',true);}
+}
+function pararCamera(){
+  SC.ativo=false; clearTimeout(SC.t);
+  if(SC.stream){SC.stream.getTracks().forEach(t=>t.stop());SC.stream=null;}
+  const v=$('scanVideo'); try{v.pause();v.srcObject=null;}catch(e){}
+}
+function fecharScanner(){pararCamera();$('scan').hidden=true;document.body.style.overflow='';}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!$('scan').hidden)fecharScanner();});
+
+function desenhar(bmp,larg,giro){
+  const e=Math.min(1,larg/Math.max(bmp.width,bmp.height)), w=Math.round(bmp.width*e), h=Math.round(bmp.height*e);
+  const cv=document.createElement('canvas'), ctx=cv.getContext('2d',{willReadFrequently:true});
+  if(giro===90){cv.width=h;cv.height=w;ctx.translate(h,0);ctx.rotate(Math.PI/2);}else{cv.width=w;cv.height=h;}
+  ctx.drawImage(bmp,0,0,w,h); return cv;
+}
+/* Foto: tenta o detector nativo e depois o ZXing em vários tamanhos e girado 90°.
+   Aceita a primeira leitura que está no cadastro (2) ou tem dígito verificador válido (1). */
+async function decodificarArquivo(f){
+  const bmp=await createImageBitmap(f,{imageOrientation:'from-image'});
+  const cand=[], nota=c=>{
+    c=String(c||'').replace(/\D/g,''); if(!c) return 0;
+    const ok=TAMANHOS.includes(c.length), v=ok&&achar(c)?2:(ok&&dvOk(c)?1:0); cand.push([v,c]); return v;
+  };
+  const melhor=()=>{ if(!cand.length) return null; cand.sort((a,b)=>b[0]-a[0]); return cand[0][1]; };
+  await prepararNativo();
+  if(SC.det){
+    try{ for(const x of (await SC.det.detect(bmp))||[]) if(nota(x.rawValue)>=1) return melhor(); }catch(e){}
+  }
+  await prepararZX();
+  for(const larg of [1600,1000,640]) for(const giro of [0,90]){
+    if(nota(zxLer(desenhar(bmp,larg,giro)))>=1) return melhor();
+  }
+  return melhor();
+}
+async function lerFoto(input){            // botão "Foto" dentro da tela do leitor
+  const f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  infoScan('Lendo a foto...');
+  try{
+    const cod=await decodificarArquivo(f);
+    if(!cod){infoScan('Não consegui ler o código nessa foto. Chegue mais perto, com boa luz, e tente de novo.',true);return;}
+    infoScan('Foto lida.'); SC.ultimo=''; SC.ultimoT=0; SC.visto=0; aoLer(cod);
+  }catch(e){infoScan('Não foi possível ler a foto: '+(e&&e.message||e),true);}
+}
+function aviso(t,erro){
+  const el=$('aviso'); el.textContent=t; el.className='aviso show '+(erro?'err':'ok');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),erro?8000:4000);
+}
+async function lerFotoDireta(input){      // 📷 abre a câmera do celular e lê a foto, sem tela intermediária
+  const f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  const aba=SC.aba; esconderMsg(aba); msg(aba,'Lendo a foto...',false);
+  try{
+    const cod=await decodificarArquivo(f);
+    if(!cod){const t='Não consegui ler o código. Chegue mais perto, com boa luz, e toque em 📷 de novo.';bipe(false);msg(aba,t);aviso(t,true);return;}
+    const r=registrar(aba,String(cod).replace(/\D/g,''));
+    if(r.erro){bipe(false);msg(aba,r.erro);aviso('⚠ '+r.erro,true);return;}
+    bipe(true);
+    const t='✓ '+r.produto.nome+' · '+r.qtd+' un no '+(aba==='Venda'?'carrinho':'inventário');
+    msg(aba,t+'. Toque em 📷 para o próximo.',false); aviso(t,false);
+  }catch(e){const t='Não foi possível ler a foto: '+(e&&e.message||e);msg(aba,t);aviso(t,true);}
+}
+
+/* ===== Carga dos cadastros ===== */
+function carregar(manual){
+  const btn=$('btnAtualizar'); btn.disabled=true; btn.textContent='↻ ...';
+  google.script.run.withSuccessHandler(d=>{
+    S.produtos=d.produtos||[]; S.locais=d.locais||[]; S.estoque=d.estoque||[];
+    S.clientes=d.clientes||[]; S.responsaveis=d.responsaveis||[];
+    S.porEan=new Map(); S.porSemZero=new Map();
+    S.produtos.forEach(p=>{S.porEan.set(p.ean,p);S.porSemZero.set(p.ean.replace(/^0+/,''),p);});
+    if(!manual) restaurarLocal();
+    renderizarVendas(); renderizarInventario(); btn.disabled=false; btn.textContent='↻ Atualizar';
+    if(manual) msg(abaMsg(),S.produtos.length+' produtos e '+S.clientes.length+' clientes carregados.',false);
+  }).withFailureHandler(e=>{
+    btn.disabled=false; btn.textContent='↻ Atualizar'; msg(abaMsg(),'Não foi possível carregar os cadastros: '+(e&&e.message||e));
+  }).dadosIniciaisGeral();
+}
+
+$('eanVenda').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();adicionarEan('Venda');}});
+$('eanInventario').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();adicionarEan('Inventario');}});
+atualizarRede();
+if(HOSPEDADO&&!CFG_API){ abrirCfgPainel(); } else { carregar(false); }
+</script>
+</body></html>
