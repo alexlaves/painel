@@ -609,14 +609,14 @@ function carregarZX(){
 async function prepararNativo(){
   if(SC.det||!('BarcodeDetector' in window)) return;
   try{
-    const f=(await BarcodeDetector.getSupportedFormats()).filter(x=>['ean_13','ean_8','upc_a','upc_e','itf'].includes(x));
+    const f=(await BarcodeDetector.getSupportedFormats()).filter(x=>['ean_13','ean_8','upc_a','upc_e','itf','code_128'].includes(x));
     if(f.length) SC.det=new BarcodeDetector({formats:f});
   }catch(e){}
 }
 async function prepararZX(){
   if(SC.zx) return;
   await carregarZX();
-  const h=new Map(); h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.ITF]);
+  const h=new Map(); h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.ITF,ZXing.BarcodeFormat.CODE_128]);
   h.set(ZXing.DecodeHintType.TRY_HARDER,true);
   SC.zx=new ZXing.MultiFormatReader(); SC.zx.setHints(h);
 }
@@ -681,6 +681,7 @@ function aoLer(bruto){
   if(cod===SC.ultimo&&sumiu<900) return;               // o mesmo código continua na frente da câmera: não conta de novo
   if(cod!==SC.ultimo&&agora-SC.ultimoT<500) return;
   SC.ultimo=cod; SC.ultimoT=agora;
+  if(cod.length===44){exibirNFe(cod,true);return;}   // chave de acesso NF-e / NFC-e
   const r=registrar(SC.aba,cod), box=$('scanUltimo');
   if(r.erro){
     bipe(false); piscar(true); box.className='scan-ultimo err'; box.textContent=r.erro; return;
@@ -723,6 +724,7 @@ async function decodificarArquivo(f){
   const bmp=await createImageBitmap(f,{imageOrientation:'from-image'});
   const cand=[], nota=c=>{
     c=String(c||'').replace(/\D/g,''); if(!c) return 0;
+    if(c.length===44){cand.push([1,c]);return 1;}   // chave NF-e / NFC-e
     const ok=TAMANHOS.includes(c.length), v=ok&&achar(c)?2:(ok&&dvOk(c)?1:0); cand.push([v,c]); return v;
   };
   const melhor=()=>{ if(!cand.length) return null; cand.sort((a,b)=>b[0]-a[0]); return cand[0][1]; };
@@ -749,13 +751,32 @@ function aviso(t,erro){
   const el=$('aviso'); el.textContent=t; el.className='aviso show '+(erro?'err':'ok');
   clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),erro?8000:4000);
 }
+
+/* ===== Chave de acesso NF-e / NFC-e (44 dígitos) ===== */
+function exibirNFe(chave,naTela){
+  bipe(true); piscar(false);
+  const modelo=chave.slice(20,22), tipo=modelo==='65'?'NFC-e':'NF-e';
+  const cnpj=chave.slice(6,20), nro=parseInt(chave.slice(25,34),10).toLocaleString('pt-BR'), serie=chave.slice(22,25);
+  const resumo=tipo+' nº '+nro+' · Série '+serie+' · CNPJ '+cnpj;
+  navigator.clipboard?.writeText(chave).catch(()=>{});
+  if(naTela){
+    const box=$('scanUltimo');
+    box.className='scan-ultimo ok';
+    box.innerHTML='📄 <strong>'+esc(tipo)+'</strong> nº '+esc(nro)+'<br>'
+      +'<span class="small">Série '+esc(serie)+' · CNPJ '+esc(cnpj)+'<br>Chave de acesso copiada ✓</span>';
+  }else{
+    aviso('📄 '+resumo+' — Chave copiada!',false);
+  }
+}
 async function lerFotoDireta(input){      // 📷 abre a câmera do celular e lê a foto, sem tela intermediária
   const f=input.files&&input.files[0]; input.value=''; if(!f) return;
   const aba=SC.aba; esconderMsg(aba); msg(aba,'Lendo a foto...',false);
   try{
     const cod=await decodificarArquivo(f);
     if(!cod){const t='Não consegui ler o código. Chegue mais perto, com boa luz, e toque em 📷 de novo.';bipe(false);msg(aba,t);aviso(t,true);return;}
-    const r=registrar(aba,String(cod).replace(/\D/g,''));
+    const c44=String(cod).replace(/\D/g,'');
+    if(c44.length===44){exibirNFe(c44,false);return;}   // chave NF-e / NFC-e
+    const r=registrar(aba,c44);
     if(r.erro){bipe(false);msg(aba,r.erro);aviso('⚠ '+r.erro,true);return;}
     bipe(true);
     const t='✓ '+r.produto.nome+' · '+r.qtd+' un no '+(aba==='Venda'?'carrinho':'inventário');
