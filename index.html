@@ -712,10 +712,11 @@ function pararCamera(){
 function fecharScanner(){pararCamera();$('scan').hidden=true;document.body.style.overflow='';}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&!$('scan').hidden)fecharScanner();});
 
-function desenhar(bmp,larg,giro){
+function desenhar(bmp,larg,giro,contraste){
   const e=Math.min(1,larg/Math.max(bmp.width,bmp.height)), w=Math.round(bmp.width*e), h=Math.round(bmp.height*e);
   const cv=document.createElement('canvas'), ctx=cv.getContext('2d',{willReadFrequently:true});
   if(giro===90){cv.width=h;cv.height=w;ctx.translate(h,0);ctx.rotate(Math.PI/2);}else{cv.width=w;cv.height=h;}
+  if(contraste){ctx.filter='contrast(1.8) brightness(1.05)';}
   ctx.drawImage(bmp,0,0,w,h); return cv;
 }
 /* Foto: tenta o detector nativo e depois o ZXing em vários tamanhos e girado 90°.
@@ -733,8 +734,8 @@ async function decodificarArquivo(f){
     try{ for(const x of (await SC.det.detect(bmp))||[]) if(nota(x.rawValue)>=1) return melhor(); }catch(e){}
   }
   await prepararZX();
-  for(const larg of [1600,1000,640]) for(const giro of [0,90]){
-    if(nota(zxLer(desenhar(bmp,larg,giro)))>=1) return melhor();
+  for(const larg of [3200,2400,1600,1000,640]) for(const giro of [0,90]) for(const cont of [false,true]){
+    if(nota(zxLer(desenhar(bmp,larg,giro,cont)))>=1) return melhor();
   }
   return melhor();
 }
