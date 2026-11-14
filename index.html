@@ -681,6 +681,8 @@ function aoLer(bruto){
   if(cod===SC.ultimo&&sumiu<900) return;               // o mesmo código continua na frente da câmera: não conta de novo
   if(cod!==SC.ultimo&&agora-SC.ultimoT<500) return;
   SC.ultimo=cod; SC.ultimoT=agora;
+  // DEBUG — remover depois
+  {const box=$('scanUltimo');box.className='scan-ultimo';box.textContent='Lido ('+cod.length+' dígitos): '+cod.slice(0,20)+'...';}
   if(cod.length===44){exibirNFe(cod,true);return;}   // chave de acesso NF-e / NFC-e
   const r=registrar(SC.aba,cod), box=$('scanUltimo');
   if(r.erro){
