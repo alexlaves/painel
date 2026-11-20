@@ -362,7 +362,7 @@ function validar(c){
     return {erro:'EAN inválido: use 8, 12, 13 ou 14 dígitos ('+c.length+' digitados).'};
   const p=achar(c); if(p) return {produto:p};
   if(!dvOk(c)) return {erro:'Leitura inválida ('+c+'): o dígito verificador não confere. Leia de novo.'};
-  return {erro:'Produto não cadastrado para o EAN '+c+'.'};
+  return {erro:'Produto não cadastrado para o EAN '+c+'.', pendencia:true, ean:c};
 }
 function aoDigitarEan(el,aba){
   el.value=el.value.replace(/\D/g,'').slice(0,14);
@@ -472,7 +472,7 @@ function adicionarEan(aba){
   const campo=$('ean'+aba), codigo=campo.value.trim();
   campo.value=''; campo.className='control scan-input'; $('dica'+aba).textContent=''; esconderMsg(aba);
   const r=registrar(aba,codigo);
-  if(r.erro) msg(aba,r.erro);
+  if(r.erro){ msg(aba,r.erro); if(r.pendencia) registrarPendencia(r.ean); }
   campo.focus();
 }
 function alterarVendas(ean,d){
@@ -683,7 +683,9 @@ function aoLer(bruto){
   SC.ultimo=cod; SC.ultimoT=agora;
   const r=registrar(SC.aba,cod), box=$('scanUltimo');
   if(r.erro){
-    bipe(false); piscar(true); box.className='scan-ultimo err'; box.textContent=r.erro; return;
+    bipe(false); piscar(true); box.className='scan-ultimo err'; box.textContent=r.erro;
+    if(r.pendencia) registrarPendencia(r.ean);
+    return;
   }
   SC.hist.push(r.produto.ean); bipe(true); piscar(false);
   box.className='scan-ultimo ok';
@@ -756,7 +758,7 @@ async function lerFotoDireta(input){      // 📷 abre a câmera do celular e l�
     const cod=await decodificarArquivo(f);
     if(!cod){const t='Não consegui ler o código. Chegue mais perto, com boa luz, e toque em 📷 de novo.';bipe(false);msg(aba,t);aviso(t,true);return;}
     const r=registrar(aba,String(cod).replace(/\D/g,''));
-    if(r.erro){bipe(false);msg(aba,r.erro);aviso('⚠ '+r.erro,true);return;}
+    if(r.erro){bipe(false);msg(aba,r.erro);aviso('⚠ '+r.erro,true); if(r.pendencia) registrarPendencia(r.ean); return;}
     bipe(true);
     const t='✓ '+r.produto.nome+' · '+r.qtd+' un no '+(aba==='Venda'?'carrinho':'inventário');
     msg(aba,t+'. Toque em 📷 para o próximo.',false); aviso(t,false);
@@ -783,5 +785,71 @@ $('eanVenda').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefaul
 $('eanInventario').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();adicionarEan('Inventario');}});
 atualizarRede();
 if(HOSPEDADO&&!CFG_API){ abrirCfgPainel(); } else { carregar(false); }
+
+/* ===== Pendências de cadastro ===== */
+function registrarPendencia(ean) {
+  if (!ean || String(ean).replace(/\D/g,'').length < 8) return;
+
+  // Modo Wi-Fi local: a bridge converte google.script.run → fetch('/api/registrarPendencia')
+  if (window.MODO_WIFI) {
+    google.script.run
+      .withSuccessHandler(function() {
+        aviso('⏳ Produto não encontrado — EAN adicionado às pendências', false);
+      })
+      .withFailureHandler(function() {
+        // Se falhar, guarda localmente como fallback
+        _salvarPendenciaLocal(ean);
+      })
+      .registrarPendencia({ ean: String(ean) });
+    return;
+  }
+
+  // Envia ao ERP via WebSocket (modo app desktop / USB)
+  if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ tipo: 'pendencia_ean', ean: String(ean) }));
+    aviso('⏳ Produto não encontrado — EAN adicionado às pendências', false);
+    return;
+  }
+
+  // Fallback offline: guarda no localStorage para enviar depois
+  _salvarPendenciaLocal(ean);
+}
+
+function _salvarPendenciaLocal(ean) {
+  try {
+    var fila = JSON.parse(localStorage.getItem('pend_offline') || '[]');
+    if (!fila.includes(String(ean))) {
+      fila.push(String(ean));
+      localStorage.setItem('pend_offline', JSON.stringify(fila));
+    }
+    aviso('⏳ Sem conexão com ERP — EAN salvo localmente para envio posterior', false);
+  } catch (e) {}
+}
+
+function enviarPendenciasOffline() {
+  // Modo Wi-Fi: tenta reenviar fila local via bridge
+  if (window.MODO_WIFI) {
+    try {
+      var fila = JSON.parse(localStorage.getItem('pend_offline') || '[]');
+      if (!fila.length) return;
+      fila.forEach(function(ean) {
+        google.script.run.registrarPendencia({ ean: ean });
+      });
+      localStorage.removeItem('pend_offline');
+    } catch (e) {}
+    return;
+  }
+  // Modo WebSocket
+  if (typeof ws === 'undefined' || !ws || ws.readyState !== WebSocket.OPEN) return;
+  try {
+    var fila = JSON.parse(localStorage.getItem('pend_offline') || '[]');
+    if (!fila.length) return;
+    fila.forEach(function(ean) {
+      ws.send(JSON.stringify({ tipo: 'pendencia_ean', ean: ean }));
+    });
+    localStorage.removeItem('pend_offline');
+  } catch (e) {}
+}
 </script>
 </body></html>
+
